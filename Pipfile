@@ -1,0 +1,15 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pipenv = "*"
+pip = "*"
+myst-parser = "*"
+sphinx = "*"
+sphinx-autobuild = "*"
+
+[dev-packages]
+pytest = "*"
+pytest-sphinx = "*"
