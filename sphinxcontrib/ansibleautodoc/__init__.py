@@ -1,6 +1,8 @@
-from .ansibleautodoc import *
+"""Ansible AutoDoc module initializer."""
+from .ansibleautodoc import AnsibleAutoTaskDirective
 
 def setup(app):
+    """Set up the Sphinx extension."""
     classes = [
         AnsibleAutoTaskDirective,
     ]

@@ -1,40 +1,44 @@
 # -*- coding: utf-8 -*-
+"""Ansible AutoDoc module."""
 from __future__ import division, print_function, absolute_import
 
-from six import StringIO, iteritems
-import os.path
+from pathlib import Path
+from pathlib import PurePath
 import os
-import os
-import re
-import codecs
 import pickle
 from docutils import nodes
 from docutils.parsers import rst
 from docutils.parsers.rst import Directive
-from docutils.statemachine import ViewList
 
-import yaml
+from ruamel.yaml import YAML
 
 from .i18n import texts
 
 def is_same_mtime(path1, path2):
-    try:
-        mtime1 = os.stat(path1).st_mtime
-        mtime2 = os.stat(path2).st_mtime
-        return mtime1 == mtime2
-    except:
-        return False
+    """Check for an exact match for modification time in two paths.
+
+    :param str path1: The first path to check.
+    :param str path2: The second path to check.
+    """
+    ret_value = False
+    mtime1 = os.stat(path1).st_mtime
+    mtime2 = os.stat(path2).st_mtime
+    ret_value = mtime1 == mtime2
+    return ret_value
 
 
-def basename(path, ext=None):
-    filename = os.path.basename(path)
-    if ext:
-        basename, _ext = os.path.splitext(filename)
-        filename = "%s.%s" % (basename, ext)
+def basename(path):
+    """Return the filename of a path.
+
+    :str path:
+    """
+    filename = PurePath(path).name
 
     return filename
 
 class Task(object):
+    """Define Task objects."""
+
     role_name = ""
     def __init__(self, filename, name, args, role_name=None):
         self.filename = filename
@@ -44,9 +48,10 @@ class Task(object):
             self.role_name = role_name
 
     def __str__(self):
-        return "{0}, {1}, {2}".format(self.filename, self.name, self.role_name)
+        return f'{self.filename}, {self.name}, {self.role_name}'
 
     def make_arg_simple(self, key, value):
+        """Return a simplified argument."""
         name = nodes.field_name(text=key)
         body = nodes.field_body()
         body.append(nodes.emphasis(text=value))
@@ -55,6 +60,7 @@ class Task(object):
         return field
 
     def make_list_representation(self, value):
+        """Return a representation of a list."""
         bl = nodes.bullet_list()
         if isinstance(value, list):
             for v in value:
@@ -62,11 +68,12 @@ class Task(object):
                 bl.append(nodes.list_item('', body))
         elif isinstance(value, dict):
             for k,v in value.items():
-                body = nodes.literal(text="%s=%s" % (k, v))
+                body = nodes.literal(text=f'{k}={v}')
                 bl.append(nodes.list_item('', body))
         return bl
 
     def make_arg_complex(self, key, value):
+        """Return a complex argument."""
         bl = self.make_list_representation(value)
         name = nodes.field_name(text=key)
         body = nodes.field_body()
@@ -76,15 +83,14 @@ class Task(object):
         return field
 
     def make_node(self, lang='en'):
-        if lang not in texts.keys():
-            lang = 'en'
+        """Create a document object model node."""
         arg_map = texts[lang]["arg_map"]
-        task_title = texts[lang]["task_title"]
+        # task_title = texts[lang]["task_title"]
         module_title = texts[lang]["module_title"]
 
         module_args = {}
 
-        # Search task definition for modules and associated arguments. 
+        # Search task definition for modules and associated arguments.
         for key, value in self.args.items():
             if key not in arg_map.keys():
                 module_args[key] = value
@@ -122,30 +128,34 @@ class Task(object):
         return item
 
 class AutodocCache(object):
+    """Define AutodocCache objects."""
     _cache = {}
+    yml = YAML(typ='rt')
 
     def parse_include(self, filename, include, role_name=None):
-        d = os.path.dirname(filename)
+        """Parse an included file."""
         if role_name:
-            i = os.path.join(d, "roles", role_name, 'tasks', include)
+            include_file = Path(f'roles/{role_name}/tasks/{include}')
         else:
-            i =  os.path.join(d, include)
+            include_file = Path(include)
 
-        with open(i, "r") as f:
-            for task in yaml.load(f):
+        with include_file.open('r', encoding='utf-8') as if_fh:
+            for task in self.yml.load_all(if_fh):
                 self.parse_task(filename, task, role_name)
 
     def parse_role(self, filename, role):
-        if 'role' not in role:
-            return
-        d = os.path.dirname(filename)
-        r = os.path.join(d, "roles", role['role'], 'tasks', 'main.yml')
+        """Parse a role."""
+        ret_value = None
 
-        with open(r, "r") as f:
-            for task in yaml.load(f):
+        role_path = Path(f'roles/{role}/tasks/{filename}')
+
+        with role_path.open('r', encoding='utf-8') as rp_fh:
+            for task in self.yml.load(rp_fh):
                 self.parse_task(filename, task, role['role'])
+        return ret_value
 
     def parse_task(self, filename, task, role_name=None):
+        """Parse a task."""
         if 'include' in task:
             self.parse_include(filename, task['include'], role_name)
             return
@@ -155,6 +165,7 @@ class AutodocCache(object):
         self._cache[filename].append(t)
 
     def parse_play(self, filename, play):
+        """Parse a play."""
         if 'tasks' in play:
             for task in play['tasks']:
                 self.parse_task(filename, task)
@@ -162,17 +173,20 @@ class AutodocCache(object):
             for role in play['roles']:
                 self.parse_role(filename, role)
 
-
     def walk(self, filename, role=None):
+        """Walk a directory for files."""
+        file_path = Path(filename)
+        assert role is None
         if filename not in self._cache:
-            # use list because there maight be same task name
+            # use list because there might be same task name
             self._cache[filename] = []
 
-        with open(filename, "r") as f:
-            for play in yaml.load(f):
+        with file_path.open('r', encoding='utf-8') as fp_fh:
+            for play in self.yml.load_all(fp_fh):
                 self.parse_play(filename, play)
 
     def get(self, filename, taskname, role_name=None):
+        """Get a task."""
         if filename not in self._cache:
             return None
         for t in self._cache[filename]:
@@ -183,21 +197,20 @@ class AutodocCache(object):
         return None
 
     def parse(self, basedir, filename):
-        cachename = os.path.join(basedir, basename(filename, 'parse'))
+        """Parse a file name object."""
+        cachename = str(Path(f'{basedir}/{filename}'))
         if is_same_mtime(filename, cachename):
             self._cache = pickle.load(open(cachename, 'rb'))
         else:
-            try:
-                self.walk(filename)
-                with open(cachename, 'wb') as f:
-                    pickle.dump(self._cache, f)
-                mtime = os.stat(filename).st_mtime
-                os.utime(cachename, (mtime, mtime))
-            except:
-                raise
+            self.walk(filename)
+            with open(cachename, 'wb') as f:
+                pickle.dump(self._cache, f)
+            mtime = os.stat(filename).st_mtime
+            os.utime(cachename, (mtime, mtime))
 
-class AnsibleAutoTaskDirective(Directive):
-    directive_name = "ansibleautotask"
+class AnsibleTaskDirective(Directive):
+    """Define AnsibleTaskDirective objects."""
+    directive_name = "ansibletask"
 
     _cache = AutodocCache()
 
@@ -206,34 +219,39 @@ class AnsibleAutoTaskDirective(Directive):
         'playbook': rst.directives.unchanged_required,
         'role': rst.directives.unchanged,
     }
+    task = False
 
     def run(self):
         self.assert_has_content()
-        env = self.state.document.settings.env
+        dir_env = self.state.document.settings.env
+        ret_value = []
+        role = None
 
         if 'playbook' not in self.options:
             msg = 'playbook option is required '
             self.state_machine.reporter.warning(msg, line=self.lineno)
-            return []
 
-        basedir = env.doctreedir
+        # basedir = dir_env.doctreedir
         filename = self.options['playbook']
-        self._cache.parse(basedir, filename)
+        # self._cache.parse(basedir, filename)
 
-        role = None
         if 'role' in self.options:
             role = self.options['role']
+        else:
+            role = 'none'
 
         taskname = "".join(self.content)
-        task = self._cache.get(filename, taskname, role)
-        if not task:
-            msg = 'filename: %s, taskname: %s is not found' % (filename, taskname)
+        self.task = self._cache.get(filename, taskname, role)
+        if not self.task:
+            msg = f'filename: {filename}, taskname: {taskname} is not found'
             self.state_machine.reporter.warning(msg, line=self.lineno)
-            return []
+            ret_value = []
 
-        lang = env.config.language
+        lang = dir_env.config.language
         if not lang:
             lang = 'en'
 
-        return [task.make_node(lang)]
+        if self.task:
+            ret_value = [self.task.make_node(lang)]
 
+        return ret_value
