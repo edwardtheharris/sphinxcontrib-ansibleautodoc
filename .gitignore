@@ -4,3 +4,4 @@ dist
 sphinxcontrib_ansibleautodoc.egg-info
 .vscode/*
 build/*
+.gnupg
