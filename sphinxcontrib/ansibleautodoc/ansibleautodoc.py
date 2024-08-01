@@ -13,6 +13,7 @@ from docutils.parsers.rst import Directive
 from ruamel.yaml import YAML
 
 from .i18n import texts
+import fickling
 
 def is_same_mtime(path1, path2):
     """Check for an exact match for modification time in two paths.
@@ -200,7 +201,7 @@ class AutodocCache(object):
         """Parse a file name object."""
         cachename = str(Path(f'{basedir}/{filename}'))
         if is_same_mtime(filename, cachename):
-            self._cache = pickle.load(open(cachename, 'rb'))
+            self._cache = fickling.load(open(cachename, 'rb'))
         else:
             self.walk(filename)
             with open(cachename, 'wb') as f:
