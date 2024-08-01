@@ -11,7 +11,16 @@ def get_long_desc():
         ret_value = r_fh.read()
     return ret_value
 
-requires = ['Sphinx>=5.0', 'setuptools']
+def get_requires():
+    """Return a list of requirements for setuptools."""
+    ret_value = [
+        'myst-parser',
+        'Sphinx>=5.0',
+        'sphinx-autobuild',
+        'sphinx-book-theme',
+        'setuptools',
+    ]
+    return ret_value
 
 setup(
     name='sphinxcontrib_ansibleautodoc',
@@ -37,6 +46,6 @@ setup(
     platforms='any',
     packages=find_packages(),
     include_package_data=True,
-    install_requires=requires,
+    install_requires=get_requires(),
     namespace_packages=['sphinxcontrib'],
 )

@@ -5,5 +5,11 @@ name = "pypi"
 
 [packages]
 pipenv = "*"
+pip = "*"
+myst-parser = "*"
+sphinx = "*"
+sphinx-autobuild = "*"
 
 [dev-packages]
+pytest = "*"
+pytest-sphinx = "*"
