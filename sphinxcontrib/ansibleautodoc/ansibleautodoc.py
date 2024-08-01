@@ -16,6 +16,7 @@ from docutils.statemachine import ViewList
 import yaml
 
 from .i18n import texts
+import fickling
 
 def is_same_mtime(path1, path2):
     try:
@@ -185,7 +186,7 @@ class AutodocCache(object):
     def parse(self, basedir, filename):
         cachename = os.path.join(basedir, basename(filename, 'parse'))
         if is_same_mtime(filename, cachename):
-            self._cache = pickle.load(open(cachename, 'rb'))
+            self._cache = fickling.load(open(cachename, 'rb'))
         else:
             try:
                 self.walk(filename)
