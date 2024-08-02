@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Ansible AutoDoc module."""
-from __future__ import division, print_function, absolute_import
-
 from pathlib import Path
 from pathlib import PurePath
 import os
@@ -26,7 +24,10 @@ def is_same_mtime(path1, path2):
     :param str path1: The first path to check.
     :param str path2: The second path to check.
     """
+    logger.debug('is_same_mtime')
     ret_value = False
+    logger.info(path1)
+    logger.debug(path2)
     mtime1 = os.stat(path1).st_mtime
     mtime2 = os.stat(path2).st_mtime
     ret_value = mtime1 == mtime2
@@ -38,6 +39,7 @@ def basename(path):
 
     :str path:
     """
+    logger.warning(path)
     filename = PurePath(path)
     logger.debug(filename)
     return filename
@@ -48,8 +50,11 @@ class Task():
     role_name = None
     def __init__(self, filename, name, args, role_name=None):
         self.filename = filename
+        logger.info(self.filename)
         self.name = name
+        logger.warning(self.name)
         self.args = args
+        logger.warning(self.args)
         if role_name:
             self.role_name = role_name
             logger.debug(role_name)
@@ -135,13 +140,14 @@ class Task():
 
         return item
 
-class AutodocCache(object):
+class AutodocCache():
     """Define AutodocCache objects."""
     _cache = {}
     yml = YAML(typ='rt')
 
     def parse_include(self, filename, include, role_name=None):
         """Parse an included file."""
+        logger.info(filename)
         if role_name:
             include_file = Path(f'roles/{role_name}/tasks/{include}')
             logger.debug(include_file)
@@ -209,8 +215,14 @@ class AutodocCache(object):
     def parse(self, basedir, filename):
         """Parse a file name object."""
         cachename = str(Path(f'{basedir}/{filename}'))
+        logger.warning(f'cache: {cachename}')
         if is_same_mtime(filename, cachename):
-            self._cache = pickle.load(open(cachename, 'rb'))
+            try:
+                cachepath = Path(cachename)
+                with cachepath.open('rb') as cp_fh:
+                    self._cache = pickle.load(cp_fh)
+            except pickle.UnpicklingError as exc:
+                logger.debug(exc)
         else:
             self.walk(filename)
             with open(cachename, 'wb') as f:
@@ -226,24 +238,28 @@ class AnsibleTaskDirective(Directive):
 
     has_content = True
     option_spec = {
-        'playbook': rst.directives.unchanged_required,
+        'path': rst.directives.unchanged_required,
         'role': rst.directives.unchanged,
     }
     task = False
 
     def run(self):
+        logger.debug('AnsibleTaskDirective.run')
         self.assert_has_content()
         dir_env = self.state.document.settings.env
+        logger.info(self.__dict__)
         ret_value = []
         role = None
 
-        if 'playbook' not in self.options:
-            msg = 'playbook option is required '
+        if 'path' not in self.options:
+            msg = 'path option is required '
             self.state_machine.reporter.warning(msg, line=self.lineno)
 
-        # basedir = dir_env.doctreedir
-        filename = self.options['playbook']
-        # self._cache.parse(basedir, filename)
+        basedir = dir_env.srcdir
+        logger.info(basedir)
+        filename = self.options['path']
+        logger.warning(filename)
+        self._cache.parse(basedir, filename)
 
         if 'role' in self.options:
             role = self.options['role']

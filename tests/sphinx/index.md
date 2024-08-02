@@ -15,7 +15,7 @@ Documenting tasks with `ansibleautodoc` is easy. Simply use the
 like:
 
 ```{ansibletask} first task
-:playbook: /tests/ansible/web.yml
+:path: tests/ansible/web.yml
 ```
 
 If that task has some arguments like `when`, these are also listed as follows:

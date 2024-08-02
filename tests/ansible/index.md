@@ -10,6 +10,11 @@ title: Ansible Autodoc test playbooks
 
 These are examples of how to document roles and playbooks.
 
-```{ansibletask} first task
-:playbook: tests/ansible/web.yml
+```{eval-rst}
+.. ansibletask:: First task
+   :path: tests/ansible/web.yml
+```
+
+```{ansibletask} 'First task'
+:path: tests/ansible/web.yml
 ```
