@@ -1,11 +1,13 @@
-- name: test playbook
+---
+- name: 'Test playbook'
   hosts: all
-  gather_facts: no
+  gather_facts: false
   tasks:
-    - name: first task
-      debug: msg="one"
+    - name: 'First task'
+      ansible.builtin.debug:
+        msg: "one"
     - name: second task
-      debug: 
+      debug:
         msg: "one"
         verbosity: no
     - include: included.yml
@@ -31,7 +33,7 @@
         - ./
         - ./my_dir
         - ./another_dir/subdir
-    
+
     - name: looping task with lots of parameters
       some_module:
         param1: 19

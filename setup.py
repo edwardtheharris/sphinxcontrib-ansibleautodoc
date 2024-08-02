@@ -15,6 +15,7 @@ def get_requires():
     """Return a list of requirements for setuptools."""
     ret_value = [
         'myst-parser',
+        'ruamel.yaml',
         'Sphinx>=5.0',
         'sphinx-autobuild',
         'sphinx-book-theme',

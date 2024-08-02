@@ -9,10 +9,16 @@ import pickle
 from docutils import nodes
 from docutils.parsers import rst
 from docutils.parsers.rst import Directive
+from sphinx.util.logging import SphinxLoggerAdapter
+
+from loguru import logger
 
 from ruamel.yaml import YAML
 
 from .i18n import texts
+
+logger.add(SphinxLoggerAdapter)
+logger.critical('this is the ansible autodoc extension')
 
 def is_same_mtime(path1, path2):
     """Check for an exact match for modification time in two paths.
@@ -32,20 +38,21 @@ def basename(path):
 
     :str path:
     """
-    filename = PurePath(path).name
-
+    filename = PurePath(path)
+    logger.debug(filename)
     return filename
 
-class Task(object):
+class Task():
     """Define Task objects."""
 
-    role_name = ""
+    role_name = None
     def __init__(self, filename, name, args, role_name=None):
         self.filename = filename
         self.name = name
         self.args = args
         if role_name:
             self.role_name = role_name
+            logger.debug(role_name)
 
     def __str__(self):
         return f'{self.filename}, {self.name}, {self.role_name}'
@@ -85,7 +92,8 @@ class Task(object):
     def make_node(self, lang='en'):
         """Create a document object model node."""
         arg_map = texts[lang]["arg_map"]
-        # task_title = texts[lang]["task_title"]
+        task_title = texts[lang]["task_title"]
+        logger.debug(task_title)
         module_title = texts[lang]["module_title"]
 
         module_args = {}
@@ -136,8 +144,10 @@ class AutodocCache(object):
         """Parse an included file."""
         if role_name:
             include_file = Path(f'roles/{role_name}/tasks/{include}')
+            logger.debug(include_file)
         else:
             include_file = Path(include)
+            logger.info(include_file)
 
         with include_file.open('r', encoding='utf-8') as if_fh:
             for task in self.yml.load_all(if_fh):

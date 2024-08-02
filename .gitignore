@@ -1,7 +1,10 @@
+__pycache__/
+_build/
+.gnupg
+.pytest_cache/
+.venv/
+.vscode/*
 *.pyc
-tests/sphinx/_build/
+build/*
 dist
 sphinxcontrib_ansibleautodoc.egg-info
-.vscode/*
-build/*
-.gnupg

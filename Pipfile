@@ -4,13 +4,16 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pipenv = "*"
+ansible = "*"
+loguru = "*"
+myst-parser = {extras = ["linkify"], version = "*"}
 pip = "*"
-myst-parser = "*"
+pipenv = "*"
 sphinx = "*"
 sphinx-autobuild = "*"
+sphinx-book-theme = "*"
 
 [dev-packages]
 pytest = "*"
 pytest-sphinx = "*"
-sphinxcontrib-ansibleautodoc = {file = "."}
+sphinxcontrib-ansibleautodoc = {file = ".", editable = true}

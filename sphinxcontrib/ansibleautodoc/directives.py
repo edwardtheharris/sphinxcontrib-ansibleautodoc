@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+"""Ansible Autodoc Directives module."""
 from __future__ import division, print_function, absolute_import
 
 from docutils.parsers.rst.directives.admonitions import BaseAdmonition
 from docutils import nodes
-from sphinx.util.compat import make_admonition
 
 class NamedNoteDirective(BaseAdmonition):
+    """Describe NamedNotDirective objects."""
     node_class = nodes.admonition
     css_class = 'note'
     #required_arguments = 1
@@ -31,4 +32,3 @@ class NamedNoteDirective(BaseAdmonition):
 
 class ColumnDirective(NamedNoteDirective):
     css_class = 'column'
-
